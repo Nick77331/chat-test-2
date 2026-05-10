@@ -3,47 +3,120 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Firebase Chat with Images</title>
+<title>Cool Boy Chat</title>
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage.js"></script>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  #userSection { margin-bottom: 20px; }
-  #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; }
-  #messages div { margin-bottom: 10px; }
-  #chatInput { width: 60%; }
+  body {
+    font-family: 'Arial Black', Gadget, sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 3em;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px #000;
+  }
+  #userSection {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  #authSection input {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+    width: 200px;
+  }
+  button {
+    background-color: #ffd700;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button:hover {
+    background-color: #ffc107;
+  }
+  #welcomeSection {
+    display: none;
+  }
+  #chatSection {
+    display: none;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  #messages {
+    border: 3px solid #ffd700;
+    border-radius: 15px;
+    height: 400px;
+    overflow-y: scroll;
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+  }
+  #messages div {
+    margin-bottom: 10px;
+  }
+  #chatInput {
+    width: 70%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+  }
+  #sendBtn {
+    padding: 10px 15px;
+    border-radius: 10px;
+    border: none;
+    background-color: #ffd700;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #sendBtn:hover {
+    background-color: #ffc107;
+  }
+  #imageInput {
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Firebase Chat with Images</h1>
+<h1>🔥 Cool Boy Chat 🔥</h1>
 
 <div id="userSection">
   <div id="authSection">
-    <h2>Register / Login</h2>
+    <h2>Register or Login</h2>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
     <br />
-    <button onclick="signUp()">Sign Up</button>
+    <button onclick="signUp()">Create Account</button>
     <button onclick="login()">Login</button>
   </div>
-  <div id="welcomeSection" style="display:none;">
-    <p>Welcome, <span id="userName"></span>!</p>
+  <div id="welcomeSection">
+    <p>Welcome, <span id="userEmail"></span>!</p>
     <button onclick="logout()">Logout</button>
   </div>
 </div>
 
-<div id="chatSection" style="display:none;">
+<div id="chatSection">
   <div id="messages"></div>
-  <br />
-  <input type="text" id="chatInput" placeholder="Type a message" />
-  <button onclick="sendMessage()">Send</button>
-  <br /><br />
-  <input type="file" id="imageUpload" />
-  <button onclick="sendImage()">Send Image</button>
+  <div style="margin-top:10px;">
+    <input type="text" id="chatInput" placeholder="Type your message here" />
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+  <div style="margin-top:10px;">
+    <input type="file" id="imageInput" />
+    <button onclick="sendImage()">Send Image</button>
+  </div>
 </div>
 
 <script>
@@ -63,12 +136,12 @@
   const db = firebase.firestore();
   const storage = firebase.storage();
 
-  // Monitor auth state
+  // Show/hide sections based on login
   auth.onAuthStateChanged(user => {
     if (user) {
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('welcomeSection').style.display = 'block';
-      document.getElementById('userName').innerText = user.email;
+      document.getElementById('userEmail').innerText = user.email;
       document.getElementById('chatSection').style.display = 'block';
       loadMessages();
     } else {
@@ -82,21 +155,21 @@
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     auth.createUserWithEmailAndPassword(email, password)
-      .catch(error => alert(error.message));
+      .catch(e => alert(e.message));
   }
 
   function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     auth.signInWithEmailAndPassword(email, password)
-      .catch(error => alert(error.message));
+      .catch(e => alert(e.message));
   }
 
   function logout() {
     auth.signOut();
   }
 
-  // Load chat messages
+  // Load messages
   function loadMessages() {
     const messagesDiv = document.getElementById('messages');
     db.collection('messages').orderBy('timestamp')
@@ -107,14 +180,13 @@
           if (msg.type === 'text') {
             messagesDiv.innerHTML += `<div><strong>${msg.sender}:</strong> ${msg.content}</div>`;
           } else if (msg.type === 'image') {
-            messagesDiv.innerHTML += `<div><strong>${msg.sender}:</strong><br /><img src="${msg.content}" width="200" /></div>`;
+            messagesDiv.innerHTML += `<div><strong>${msg.sender}:</strong><br /><img src="${msg.content}" width="200" style="border-radius:10px; border:2px solid #ffd700;" /></div>`;
           }
         });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
   }
 
-  // Send text message
   function sendMessage() {
     const content = document.getElementById('chatInput').value;
     if (content.trim() === '') return;
@@ -127,9 +199,8 @@
     document.getElementById('chatInput').value = '';
   }
 
-  // Send image
   function sendImage() {
-    const file = document.getElementById('imageUpload').files[0];
+    const file = document.getElementById('imageInput').files[0];
     if (!file) return;
     const storageRef = storage.ref().child('images/' + Date.now() + '_' + file.name);
     storageRef.put(file).then(() => {
